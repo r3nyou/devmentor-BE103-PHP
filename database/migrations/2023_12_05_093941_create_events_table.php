@@ -12,8 +12,6 @@ return new class extends Migration
     public function up(): void
     {
 
-// 通知管道（1…*）
-// 要通知的對象（1…*）
         Schema::create('events', function (Blueprint $table) {
             $table->id();
             $table->string('name');

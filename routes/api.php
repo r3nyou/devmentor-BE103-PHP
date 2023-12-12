@@ -19,5 +19,10 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
-Route::get('events', [EventController::class, 'index']);
-Route::post('events', [EventController::class, 'store']);
+Route::group(['prefix' => 'events'], function () {
+    Route::get('', [EventController::class, 'index']);
+    Route::post('', [EventController::class, 'store']);
+    Route::get('/{id}', [EventController::class, 'show']);
+    Route::put('/{id}', [EventController::class, 'update']);
+    Route::get('/{id}', [EventController::class, 'show']);
+});

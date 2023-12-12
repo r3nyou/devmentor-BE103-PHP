@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notify_channels', function (Blueprint $table) {
+        Schema::create('event_user', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->text('content');
-            $table->timestamps();
+            $table->foreignId('user_id')->constrained(
+                'users', 'id'
+            );
+            $table->foreignId('event_id')->constrained(
+                'events', 'id'
+            );
         });
     }
 
@@ -24,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('notify_channels');
+        Schema::dropIfExists('event_user');
     }
 };
