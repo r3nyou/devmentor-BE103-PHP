@@ -16,7 +16,7 @@
 
 3. Start the container and enerate application key (via Laravel Sail).
    ```sh
-   cd src && vendor/bin/sail up -d && vendor/bin/sail artisan key:generate
+   vendor/bin/sail up -d && vendor/bin/sail artisan key:generate
    ```
 
 Once the application's containers have been started, you may access the project in your web browser at: http://localhost.
