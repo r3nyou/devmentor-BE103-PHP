@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Event;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -13,49 +15,35 @@ class EventController extends Controller
 
     public function index()
     {
-        $eventA = new \stdClass();
-        $eventA->name = 'Event A';
-        $eventA->trigger_time = now();
-
-        $eventB = new \stdClass();
-        $eventB->name = 'Event B';
-        $eventB->trigger_time = now();
-
-        $events = [$eventA, $eventB];
+        $events = Event::all();
 
         return response()->json($events);
     }
 
+    public function get($id)
+    {
+        $event = Event::find($id);
+
+        return response()->json($event);
+    }
+
     public function create(Request $request)
     {
-        $event = new \stdClass();
+        $event = new Event();
         $event->name = $request->name;
-        $event->trigger_time = $request->trigger_time;
+        $event->trigger_time = Carbon::parse($request->trigger_time);
+        $event->save();
 
         return response()->json($event);
     }
 
     public function update($id, Request $request)
     {
-        $eventA = new \stdClass();
-        $eventA->name = 'Event A';
-        $eventA->trigger_time = now();
+        $updateEvent = Event::where('id', $id)->first();
+        $updateEvent->name = $request->name;
+        $updateEvent->trigger_time = Carbon::parse($request->trigger_time);
+        $updateEvent->save();
 
-        $eventB = new \stdClass();
-        $eventB->name = 'Event B';
-        $eventB->trigger_time = now();
-
-        $events = [
-            '1' => $eventA,
-            '2' => $eventB
-        ];
-
-        if (isset($events[$id])) {
-            $updateEvent = $events[$id];
-            $updateEvent->name = $request->name;
-            $updateEvent->trigger_time = $request->trigger_time;
-        }
-
-        return response()->json($events);
+        return response()->json($updateEvent);
     }
 }
