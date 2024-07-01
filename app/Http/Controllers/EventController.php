@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Transformer\GetEventsTransformer;
 use App\Models\Event;
 use App\Models\EventNotifyChannel;
 use Carbon\Carbon;
@@ -14,24 +15,11 @@ class EventController extends Controller
         return response()->json(['message' => 'Hello World from controller!']);
     }
 
-    public function index()
+    public function index(GetEventsTransformer $transformer)
     {
         $events = Event::all();
 
-        $response = [];
-        foreach ($events as $event) {
-            $eventNotifyChannelIds = [];
-            foreach ($event->eventNotifyChannels as $eventNotifyChannel) {
-                $eventNotifyChannelIds[] = $eventNotifyChannel->notify_channel_id;
-            }
-
-            $response[] = [
-                'id' => $event->id,
-                'name' => $event->name,
-                'trigger_time' => $event->trigger_time,
-                'event_notify_channels' => $eventNotifyChannelIds,
-            ];
-        }
+        $response = $transformer->transform($events);
 
         return response()->json($response);
     }
@@ -40,16 +28,11 @@ class EventController extends Controller
     {
         $event = Event::find($id);
 
-        $eventNotifyChannelIds = [];
-        foreach ($event->eventNotifyChannels as $eventNotifyChannel) {
-            $eventNotifyChannelIds[] = $eventNotifyChannel->notify_channel_id;
-        }
-
         $response = [
             'id' => $event->id,
             'name' => $event->name,
             'trigger_time' => $event->trigger_time,
-            'event_notify_channels' => $eventNotifyChannelIds,
+            'event_notify_channels' => $event->eventNotifyChannels->pluck('notify_channel_id'),
         ];
         return response()->json($response);
     }
