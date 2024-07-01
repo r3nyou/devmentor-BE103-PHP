@@ -17,7 +17,7 @@ class EventController extends Controller
 
     public function index(GetEventsTransformer $transformer)
     {
-        $events = Event::all();
+        $events = Event::with('eventNotifyChannels')->get();
 
         $response = $transformer->transform($events);
 
