@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CreateEventRequest;
+use App\Http\Requests\UpdateEventRequest;
 use App\Http\Transformer\GetEventsTransformer;
 use App\Models\Event;
 use App\Models\EventNotifyChannel;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
@@ -26,7 +28,7 @@ class EventController extends Controller
 
     public function get($id)
     {
-        $event = Event::find($id);
+        $event = Event::findOrFail($id);
 
         $response = [
             'id' => $event->id,
@@ -37,7 +39,7 @@ class EventController extends Controller
         return response()->json($response);
     }
 
-    public function create(Request $request)
+    public function create(CreateEventRequest $request)
     {
         $event = new Event();
         $event->name = $request->name;
@@ -57,24 +59,28 @@ class EventController extends Controller
         return response()->json($event);
     }
 
-    public function update($id, Request $request)
+    public function update($id, UpdateEventRequest $request)
     {
-        $updateEvent = Event::where('id', $id)->first();
-        $updateEvent->name = $request->name;
+        $updateEvent = Event::where('id', $id)->firstOrFail();
+        if (null !== $request->name) {
+            $updateEvent->name = $request->name;
+        }
         $updateEvent->trigger_time = Carbon::parse($request->trigger_time);
         $updateEvent->save();
 
-        $updateEvent->eventNotifyChannels()->delete();
+        if (null !== $request->event_notify_channels) {
+            $updateEvent->eventNotifyChannels()->delete();
 
-        $eventNotifyChannels = [];
-        foreach ($request->event_notify_channels as $eventNotifyChannelId) {
-            $eventNotifyChannel = new EventNotifyChannel();
-            $eventNotifyChannel->notify_channel_id = $eventNotifyChannelId;
-            $eventNotifyChannel->message = 'test';
-            $eventNotifyChannels[] = $eventNotifyChannel;
+            $eventNotifyChannels = [];
+            foreach ($request->event_notify_channels as $eventNotifyChannelId) {
+                $eventNotifyChannel = new EventNotifyChannel();
+                $eventNotifyChannel->notify_channel_id = $eventNotifyChannelId;
+                $eventNotifyChannel->message = 'test';
+                $eventNotifyChannels[] = $eventNotifyChannel;
+            }
+
+            $updateEvent->eventNotifyChannels()->saveMany($eventNotifyChannels);
         }
-
-        $updateEvent->eventNotifyChannels()->saveMany($eventNotifyChannels);
 
         return response()->json($updateEvent);
     }
