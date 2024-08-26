@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Transformer\GetEventsTransformer;
+use App\Models\Event;
+use App\Models\EventNotifyChannel;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -11,51 +15,67 @@ class EventController extends Controller
         return response()->json(['message' => 'Hello World from controller!']);
     }
 
-    public function index()
+    public function index(GetEventsTransformer $transformer)
     {
-        $eventA = new \stdClass();
-        $eventA->name = 'Event A';
-        $eventA->trigger_time = now();
+        $events = Event::with('eventNotifyChannels')->get();
 
-        $eventB = new \stdClass();
-        $eventB->name = 'Event B';
-        $eventB->trigger_time = now();
+        $response = $transformer->transform($events);
 
-        $events = [$eventA, $eventB];
+        return response()->json($response);
+    }
 
-        return response()->json($events);
+    public function get($id)
+    {
+        $event = Event::find($id);
+
+        $response = [
+            'id' => $event->id,
+            'name' => $event->name,
+            'trigger_time' => $event->trigger_time,
+            'event_notify_channels' => $event->eventNotifyChannels->pluck('notify_channel_id'),
+        ];
+        return response()->json($response);
     }
 
     public function create(Request $request)
     {
-        $event = new \stdClass();
+        $event = new Event();
         $event->name = $request->name;
-        $event->trigger_time = $request->trigger_time;
+        $event->trigger_time = Carbon::parse($request->trigger_time);
+        $event->save();
+
+        $eventNotifyChannels = [];
+        foreach ($request->event_notify_channels as $eventNotifyChannelId) {
+            $eventNotifyChannel = new EventNotifyChannel();
+            $eventNotifyChannel->notify_channel_id = $eventNotifyChannelId;
+            $eventNotifyChannel->message = 'test';
+            $eventNotifyChannels[] = $eventNotifyChannel;
+        }
+
+        $event->eventNotifyChannels()->saveMany($eventNotifyChannels);
 
         return response()->json($event);
     }
 
     public function update($id, Request $request)
     {
-        $eventA = new \stdClass();
-        $eventA->name = 'Event A';
-        $eventA->trigger_time = now();
+        $updateEvent = Event::where('id', $id)->first();
+        $updateEvent->name = $request->name;
+        $updateEvent->trigger_time = Carbon::parse($request->trigger_time);
+        $updateEvent->save();
 
-        $eventB = new \stdClass();
-        $eventB->name = 'Event B';
-        $eventB->trigger_time = now();
+        $updateEvent->eventNotifyChannels()->delete();
 
-        $events = [
-            '1' => $eventA,
-            '2' => $eventB
-        ];
-
-        if (isset($events[$id])) {
-            $updateEvent = $events[$id];
-            $updateEvent->name = $request->name;
-            $updateEvent->trigger_time = $request->trigger_time;
+        $eventNotifyChannels = [];
+        foreach ($request->event_notify_channels as $eventNotifyChannelId) {
+            $eventNotifyChannel = new EventNotifyChannel();
+            $eventNotifyChannel->notify_channel_id = $eventNotifyChannelId;
+            $eventNotifyChannel->message = 'test';
+            $eventNotifyChannels[] = $eventNotifyChannel;
         }
 
-        return response()->json($events);
+        $updateEvent->eventNotifyChannels()->saveMany($eventNotifyChannels);
+
+        return response()->json($updateEvent);
     }
 }
